@@ -1,19 +1,33 @@
 package planet.detail;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.text.DecimalFormat;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 
 public class PlanetController {
-    String imagePath = null;
-
+    String imagePath = "images/no_image.png";
+    private PlanetFactory planetFactory;
+    private Planet planet;
+    private ImageLoader imageLoader = new ImageLoader();
+    private Image image;
+    
     @FXML
     private ImageView planetImage;
 
@@ -39,20 +53,59 @@ public class PlanetController {
     private TextField planetNumberOfMoons;
 
     @FXML
-    private Label fancyPlanetName; /*"Any change to planet name should also change the fancy planet name label at
-the top" Not sure if he means when saving or real time. If real time we would have to have a listener for evrytime the name is change and change the label too
+    private Label fancyPlanetName;
+    
+    @FXML
+    void UpdateFancy(KeyEvent event) {
+    	fancyPlanetName.setText(planetName.getText());
+    }
+    
+    @FXML
+    void DiameterChange(KeyEvent event) {
+    	DecimalFormat decimalFormat = new DecimalFormat("#,###");  
+    	String kmString = planetDiameterKM.getText();
+    	kmString = kmString.replaceAll(",", "");
+    	Double kmValue = Double.parseDouble(kmString);
+    	Double mConvert = kmValue * 1000; 
+    	String numberAsString = decimalFormat.format(mConvert);
+    	planetDiameterM.setText(numberAsString);
+    	try {
+			TimeUnit.SECONDS.sleep(1);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+    	numberAsString = decimalFormat.format(kmValue);
+    	planetDiameterKM.setText(numberAsString);
+    }
+    
+    @FXML
+    void TempChange(KeyEvent event) {
+    	String cString = planetMeanSurfaceTempC.getText();
+    	Double cValue = Double.parseDouble(cString);
+    	Double fConvert = (cValue * 9/5) + 32;
+    	planetMeanSurfaceTempF.setText(""+ fConvert);
 
-Planet diameter (km) should default to an invalid diameter and the diameter text
-field should default to an empty string
-⁃ Planet diameter (km) should update Planet diameter (mi) any time it changes other stuff like this? Maybe he wants more than just the 3 funcs
-
-*/
+    }
+    
+    @FXML
+    void moonChanged(KeyEvent event) {
+    	DecimalFormat decimalFormat = new DecimalFormat("#,###");  
+    	String moonString = planetNumberOfMoons.getText();
+    	moonString = moonString.replaceAll(",", "");
+    	int moonValue = Integer.parseInt(moonString);
+//    	try {
+//			TimeUnit.SECONDS.sleep(1);
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+    	String numberAsString = decimalFormat.format(moonValue);
+    	planetNumberOfMoons.setText(numberAsString);
+    	
+    }
 
     @FXML
     void selectImage(ActionEvent event) {
-        //Ran into the problem where once we load the image we need to save the file since thats what will be saved when they save a planet
-        //so i made a filed for it. since this is the controller i guess its ok?
-        ImageLoader imageLoader = new ImageLoader();
         imagePath = imageLoader.getImagePath();
         planetImage.setImage(imageLoader.getImage(imagePath));
 
@@ -60,13 +113,15 @@ field should default to an empty string
 
     @FXML
     void loadPlanet(ActionEvent event) {
+    	if(displayLoadMessage() == false) {
+    		return;
+    	}
         PlanetFactory planetFactory = new StandardPlanetFactory();
-        //we should load up the file path for the user here and get the path to pass into the factory. Maybe make a file path opener? Since we keep doing that
         Planet planet = planetFactory.getPlanet("");
         if(planet == null){
             return;
         }
-        ImageLoader imageLoader = new ImageLoader();
+        
         planetImage.setImage(imageLoader.getImage(planet.getImagePath()));
         planetName.setText(planet.getName());
         planetDiameterKM.setText(""+planet.getDiameterKM());
@@ -80,13 +135,41 @@ field should default to an empty string
     @FXML
     void savePlanet(ActionEvent event) {
         PlanetFactory planetFactory = new StandardPlanetFactory();
-        //if imagepath is null it should i guess be passed the location of the no image?
-        Planet planet = planetFactory.getPlanet(planetName.getText(),planetDiameterKM.getText(),planetMeanSurfaceTempC.getText(),planetNumberOfMoons.getText(),imagePath);
+        Planet planet = planetFactory.makePlanet(planetName.getText(),planetDiameterKM.getText(),planetMeanSurfaceTempC.getText(),planetNumberOfMoons.getText(),imagePath);
         if(planet == null){
-            //Alert user invalid planet
             return;
         }
         WriteObject writeObject = new WriteObject();
         writeObject.savePlanet(planet);
     }
+    
+    public void initialize() {
+    	FileInputStream inputstream;
+		try {
+			inputstream = new FileInputStream(imagePath);
+			image = new Image(inputstream);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+    	planetImage.setImage(image);
+    	planetDiameterM.setDisable(true);
+    	planetDiameterM.setStyle("-fx-opacity: 1;");
+    	planetMeanSurfaceTempF.setDisable(true);
+    	planetMeanSurfaceTempF.setStyle("-fx-opacity: 1;");
+    }
+    
+    boolean displayLoadMessage() {
+    	Alert alert = new Alert(AlertType.CONFIRMATION);
+    	alert.setTitle("Whoa there partner");
+    	alert.setHeaderText("I reckon you consider this");
+    	alert.setContentText("Are you sure you want to replace the field values in the UI");
+
+    	Optional<ButtonType> result = alert.showAndWait();
+    	if (result.get() == ButtonType.OK){
+    	    return true;
+    	} else {
+    	    return false;
+    	}
+    }
+    
 }

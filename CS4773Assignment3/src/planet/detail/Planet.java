@@ -1,7 +1,11 @@
 package planet.detail;
 
-public class Planet {
-    private String name;
+import java.io.Serializable;
+
+public class Planet implements Serializable{
+
+	private static final long serialVersionUID = 1L;
+	private String name;
     private double diameterKM;
     private double tempC;
     private int numberOfMoons;
@@ -26,7 +30,7 @@ public class Planet {
     public String getName() {
         return name;
     }
-
+    
     public void setName(String name) {
         this.name = name;
     }
@@ -64,5 +68,4 @@ public class Planet {
     }
 
     private String imagePath;
-
 }

@@ -6,13 +6,14 @@ public class StandardPlanetFactory implements PlanetFactory {
 
     PlanetValidator planetValidator;
     LoadObject objectLoader;
+    
     public StandardPlanetFactory(){
         planetValidator = new PlanetValidator();
         objectLoader = new LoadObject();
     }
 
     @Override
-    public Planet getPlanet(String name, String diametterKm, String tempc, String numOfMoons , String imagePath) {
+    public Planet makePlanet(String name, String diametterKm, String tempc, String numOfMoons , String imagePath) {
         try {
             Planet planet = new Planet(name,Double.parseDouble(diametterKm),Double.parseDouble(tempc),Integer.parseInt(numOfMoons),imagePath);
             if(planetValidator.isValidPlanet(planet)){
@@ -25,7 +26,6 @@ public class StandardPlanetFactory implements PlanetFactory {
     }
 
     public Planet getPlanet(String filePath) {
-        Planet planet = objectLoader.getPlanet(filePath);
-        return planet;
+        return objectLoader.getPlanet();
     }
 }
